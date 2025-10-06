@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 
 public class CardsController : MonoBehaviour
@@ -8,6 +10,8 @@ public class CardsController : MonoBehaviour
     [SerializeField] Card cardPrefab;
     [SerializeField] Transform gridTransform;
     [SerializeField] Sprite[] sprites;
+    [Header("Optional UI")]
+    [SerializeField] GameObject winPanel;
 
     private List<Sprite> spritePairs;
 
@@ -15,11 +19,40 @@ public class CardsController : MonoBehaviour
     Card secondSelected;
 
     int matchCounts;
+    bool winShown = false;
 
     private void Start()
     {
         PrepareSprites();
         CreateCards();
+        SetupWinPanel();
+    }
+
+    Button playAgainButton;
+
+    void SetupWinPanel()
+    {
+        if (winPanel == null) return;
+
+        // Look for any Button inside the panel (include inactive children)
+        playAgainButton = winPanel.GetComponentInChildren<UnityEngine.UI.Button>(true);
+        if (playAgainButton != null)
+        {
+            // Remove previous listeners so the inspector or prefab doesn't duplicate behavior
+            playAgainButton.onClick.RemoveAllListeners();
+            playAgainButton.onClick.AddListener(() => {
+                UnityEngine.SceneManagement.SceneManager.LoadScene(
+                    UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
+            });
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (playAgainButton != null)
+        {
+            playAgainButton.onClick.RemoveAllListeners();
+        }
     }
 
     private void PrepareSprites()
@@ -80,6 +113,11 @@ public class CardsController : MonoBehaviour
                 PrimeTween.Sequence.Create()
                     .Chain(PrimeTween.Tween.Scale(gridTransform, Vector3.one * 1.2f, 0.2f, ease: PrimeTween.Ease.OutBack))
                     .Chain(PrimeTween.Tween.Scale(gridTransform, Vector3.one, 0.1f));
+                if (winPanel != null && !winShown)
+                {
+                    winShown = true;
+                    winPanel.SetActive(true);
+                }
             }
         }
         else
